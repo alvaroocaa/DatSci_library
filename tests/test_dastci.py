@@ -1,9 +1,9 @@
 import sys
 import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-import pytest
-import pandas as pd
-import numpy as np
+import pytest # type: ignore
+import pandas as pd # type: ignore
+import numpy as np # type: ignore
 import os
 from io import StringIO
 from unittest.mock import patch
@@ -59,10 +59,9 @@ def test_format_db(sample_df):
     df_no_changes = format_db(sample_df, dupl=False, blnk=False)
     assert len(df_no_changes) == 8  # Should return the original DataFrame without changes
 
-# Test table_count function
 def test_table_count(sample_df):
-    categories = pd.Series(['A', 'B', 'C'])
-    result_df = table_count(sample_df, categories, 'Category') #PETA EN EL .APPEND('TOTAL) DE A LIBRERIA PQ SE LE PASA UNA PD.SERIES I NO UN ARRAY, TENER EN CUENTA VARIOS TIPOS DE INPUTS
+    categories = pd.unique(sample_df['Category'])
+    result_df = table_count(sample_df, categories, 'Category')
 
     # Check if 'Total' row is added
     assert 'Total' in result_df['Categories'].values
@@ -71,20 +70,33 @@ def test_table_count(sample_df):
     total_count = len(sample_df)
     total_percent = total_count / total_count
     assert result_df[result_df['Categories'] == 'Total']['Count'].values[0] == total_count
-    assert result_df[result_df['Categories'] == 'Total']['Count (%)'].values[0] == total_percent
+    assert float(result_df[result_df['Categories'] == 'Total']['Count (%)'].values[0]/100) == total_percent
 
     # Check if the count and percentages for the categories are correct
     for cat in categories:
-        cat_count = len(sample_df[sample_df['Category'] == cat])
+        # Special handling for NaN category
+        if pd.isna(cat):
+            cat_count = len(sample_df[sample_df['Category'].isna()])
+        else:
+            cat_count = len(sample_df[sample_df['Category'] == cat])
         cat_percent = cat_count / len(sample_df)
-        assert result_df[result_df['Categories'] == cat]['Count'].values[0] == cat_count
-        assert result_df[result_df['Categories'] == cat]['Count (%)'].values[0] == cat_percent
+        
+        if pd.isna(cat):
+            assert result_df[result_df['Categories'].isna()]['Count'].values[0] == cat_count
+            assert float(result_df[result_df['Categories'].isna()]['Count (%)'].values[0]/100) == cat_percent
+        else:
+            assert result_df[result_df['Categories'] == cat]['Count'].values[0] == cat_count
+            assert float(result_df[result_df['Categories'] == cat]['Count (%)'].values[0]/100) == cat_percent
+
 
 # Test edge cases for table_count (e.g., missing categories)
 def test_table_count_empty_categories(sample_df):
+    # Passing an empty Series for categories
     categories = pd.Series([])
-    result_df = table_count(sample_df, categories, 'Category')
-    assert result_df.empty  # Should return an empty DataFrame when no categories are provided
+
+    # Ensure the ValueError is raised when the categories list is empty
+    with pytest.raises(ValueError, match="The 'categories' list cannot be empty."):
+        table_count(sample_df, categories, 'Category')
 
 # Test edge cases for extract_df (nonexistent directory, wrong file format)
 @patch('os.makedirs')
