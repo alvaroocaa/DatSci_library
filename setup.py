@@ -3,7 +3,7 @@
 from setuptools import setup, find_packages
 
 setup(
-    name='my-python-library',
+    name='DatSci_libary',
     version='0.1.0',
     description='A short description of my library',
     long_description=open('README.md').read(),
