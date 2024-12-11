@@ -58,7 +58,10 @@ def format_db(df, **kwargs):
         return df  
     
 
-def table_count(df, categories, column):
+def table_count(df, column):
+    
+    categories = pd.unique(df[column])
+
     # Check if df is a pandas DataFrame
     if not isinstance(df, pd.DataFrame):
         raise ValueError("The 'df' parameter must be a pandas DataFrame.")
@@ -104,4 +107,3 @@ def table_count(df, categories, column):
     })
 
     return return_df
-
