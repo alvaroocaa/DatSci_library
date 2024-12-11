@@ -11,9 +11,7 @@ setup(
     packages=find_packages(),  
     install_requires=[
         'numpy',
-        'pandas',
-        'sys',
-        'os'
+        'pandas'
     ],
     classifiers=[
         'Programming Language :: Python :: 3',
