@@ -39,23 +39,45 @@ def extract_df(file, directory, filename, ext):
         raise  # Re-raise the exception to ensure it's handled properly
 
 
+def read_txt(directory, **kwargs):
+
+    with open(directory, 'r', encoding='utf-8') as file:
+        text = file.read()
+
+    cleaned_text = text.replace('"', '').replace("'", '')
+    dir_name, base_name = os.path.split(directory)
+    file_name, file_ext = os.path.splitext(base_name)
+    cleaned_file_path = os.path.join(dir_name, f"{file_name}_cleaned{file_ext}")
+
+    with open(cleaned_file_path, 'w', encoding='utf-8') as file:
+        file.write(cleaned_text)
+
+    rows = kwargs.get('rows', 0)
+
+    df = pd.read_csv(rf'{cleaned_file_path}', skip_rows = rows, encoding ='latin', sep = '\t')
+    return df
+
 
 def format_db(df, **kwargs):
 
     dupl = kwargs.get('dupl', False)
+    dupl_subs = kwargs.get('dupl_subs', False)
     blnk = kwargs.get('blnk', False)
+    type = kwargs.get('type', False)
     
-    if dupl and not blnk:
-        return df.drop_duplicates()
+    if dupl:
+        df = df.drop_duplicates()
+
+    if dupl_subs:
+        df = df.drop_duplicates(subset=[dupl_subs])
     
-    elif not dupl and blnk:
-        return df.dropna()
-    
-    elif dupl and blnk:
-        return df.drop_duplicates().dropna()
-    
-    else:
-        return df  
+    if blnk:
+        df = df.dropna()
+
+    if type:
+        df = df.convert_dtypes()
+
+    return df
     
 
 def table_count(df, column):
@@ -107,3 +129,5 @@ def table_count(df, column):
     })
 
     return return_df
+
+

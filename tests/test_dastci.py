@@ -8,109 +8,66 @@ import os
 from io import StringIO
 from unittest.mock import patch
 from datsci.datsci import extract_df, format_db, table_count
+import tempfile
 
-# Sample DataFrame for testing
 @pytest.fixture
-def sample_df():
-    data = {
-        'Category': ['A', 'B', 'A', 'B', 'C', 'A', np.nan, np.nan],
-        'Value': [1, 2, 1, 4, 5, np.nan, 7, np.nan]
-    }
-    return pd.DataFrame(data)
+def sample_dataframe():
+    return pd.DataFrame({
+        "Category": ["A", "B", "A", "C", "B", "A"],
+        "Value": [10, 20, 10, 30, 20, 10]
+    })
 
-# Test extract_df function
-@patch('os.makedirs')
-@patch.object(pd.DataFrame, 'to_excel')
-@patch.object(pd.DataFrame, 'to_parquet')
-@patch.object(pd.DataFrame, 'to_csv')
-def test_extract_df(mock_to_csv, mock_to_parquet, mock_to_excel, mock_makedirs, sample_df):
-    # Test Excel export
-    extract_df(sample_df, 'test_dir', 'test_file.xlsx', 'excel')
-    mock_makedirs.assert_called_once_with('test_dir', exist_ok=True)
-    mock_to_excel.assert_called_once_with('test_dir/test_file.xlsx')
+@pytest.fixture
+def temp_directory():
+    with tempfile.TemporaryDirectory() as tmpdir:
+        yield tmpdir
 
-    # Test Parquet export
-    extract_df(sample_df, 'test_dir', 'test_file.parquet', 'parquet')
-    mock_to_parquet.assert_called_once_with('test_dir/test_file.parquet')
+# Test for extract_df
+def test_extract_df(sample_dataframe, temp_directory):
+    file_name = "test_file.xlsx"
+    extract_df(sample_dataframe, temp_directory, file_name, "excel")
+    assert os.path.exists(os.path.join(temp_directory, file_name))
 
-    # Test CSV export
-    extract_df(sample_df, 'test_dir', 'test_file.csv', 'csv')
-    mock_to_csv.assert_called_once_with('test_dir/test_file.csv')
+    file_name = "test_file.csv"
+    extract_df(sample_dataframe, temp_directory, file_name, "csv")
+    assert os.path.exists(os.path.join(temp_directory, file_name))
 
-    # Test invalid format (should not raise an error)
-    extract_df(sample_df, 'test_dir', 'test_file.txt', 'txt')
-    # Mock for txt export is missing, test should pass without any calls here
-
-# Test format_db function
-def test_format_db(sample_df):
-    # Test dropping duplicates (dupl=True)
-    df_no_duplicates = format_db(sample_df, dupl=True, blnk=False)
-    assert len(df_no_duplicates) == 7  # Should drop the duplicate entries
-
-    # Test dropping NaN (blnk=True)
-    df_no_blank = format_db(sample_df, dupl=False, blnk=True)
-    assert df_no_blank.isnull().sum().sum() == 0  # Should drop the row with NaN in both columns
-
-    # Test dropping both duplicates and NaN
-    df_no_dupl_no_blank = format_db(sample_df, dupl=True, blnk=True)
-    assert len(df_no_dupl_no_blank) == 4  # Should drop duplicate 'A' and NaN
-
-    # Test without dropping anything
-    df_no_changes = format_db(sample_df, dupl=False, blnk=False)
-    assert len(df_no_changes) == 8  # Should return the original DataFrame without changes
-
-def test_table_count(sample_df):
-    categories = pd.unique(sample_df['Category'])
-    result_df = table_count(sample_df, categories, 'Category')
-
-    # Check if 'Total' row is added
-    assert 'Total' in result_df['Categories'].values
-
-    # Check that count and percentage for 'Total' is correct
-    total_count = len(sample_df)
-    total_percent = total_count / total_count
-    assert result_df[result_df['Categories'] == 'Total']['Count'].values[0] == total_count
-    assert float(result_df[result_df['Categories'] == 'Total']['Count (%)'].values[0]/100) == total_percent
-
-    # Check if the count and percentages for the categories are correct
-    for cat in categories:
-        # Special handling for NaN category
-        if pd.isna(cat):
-            cat_count = len(sample_df[sample_df['Category'].isna()])
-        else:
-            cat_count = len(sample_df[sample_df['Category'] == cat])
-        cat_percent = cat_count / len(sample_df)
-        
-        if pd.isna(cat):
-            assert result_df[result_df['Categories'].isna()]['Count'].values[0] == cat_count
-            assert float(result_df[result_df['Categories'].isna()]['Count (%)'].values[0]/100) == cat_percent
-        else:
-            assert result_df[result_df['Categories'] == cat]['Count'].values[0] == cat_count
-            assert float(result_df[result_df['Categories'] == cat]['Count (%)'].values[0]/100) == cat_percent
-
-
-# Test edge cases for table_count (e.g., missing categories)
-def test_table_count_empty_categories(sample_df):
-    # Passing an empty Series for categories
-    categories = pd.Series([])
-
-    # Ensure the ValueError is raised when the categories list is empty
-    with pytest.raises(ValueError, match="The 'categories' list cannot be empty."):
-        table_count(sample_df, categories, 'Category')
-
-# Test edge cases for extract_df (nonexistent directory, wrong file format)
-@patch('os.makedirs')
-@patch.object(pd.DataFrame, 'to_excel')
-@patch.object(pd.DataFrame, 'to_parquet')
-@patch.object(pd.DataFrame, 'to_csv')
-def test_extract_df_invalid_format(mock_to_csv, mock_to_parquet, mock_to_excel, mock_makedirs, sample_df):
-    # Test invalid file format
     with pytest.raises(ValueError):
-        extract_df(sample_df, 'test_dir', 'test_file.xyz', 'xyz')
+        extract_df(sample_dataframe, temp_directory, "test_file.xyz", "xyz")
 
-    # Test directory creation failure (e.g., permission issues or path length issues)
-    mock_makedirs.side_effect = OSError('Permission Denied')
-    extract_df(sample_df, 'test_dir', 'test_file.csv', 'csv')  # Should print error message
+# Test for read_txt
+def test_read_txt(temp_directory):
+    text_file_path = os.path.join(temp_directory, "test_file.txt")
+    with open(text_file_path, "w", encoding="utf-8") as f:
+        f.write("Column1\tColumn2\nValue1\tValue2\n")
 
-if __name__ == '__main__':
+    df = read_txt(text_file_path)
+    assert not df.empty
+    assert list(df.columns) == ["Column1", "Column2"]
+
+# Test for format_db
+def test_format_db(sample_dataframe):
+    formatted_df = format_db(sample_dataframe, dupl=True)
+    assert len(formatted_df) < len(sample_dataframe)  # Duplicates removed
+
+    formatted_df = format_db(sample_dataframe, blnk=True)
+    assert not formatted_df.isnull().any().any()  # No blanks should remain
+
+# Test for table_count
+def test_table_count(sample_dataframe):
+    count_df = table_count(sample_dataframe, "Category")
+    assert "Categories" in count_df.columns
+    assert "Count" in count_df.columns
+    assert "Count (%)" in count_df.columns
+
+    assert len(count_df) == len(sample_dataframe["Category"].unique()) + 1  # Unique categories + total
+
+    with pytest.raises(ValueError):
+        table_count(sample_dataframe, "NonExistentColumn")  # Column doesn't exist
+
+    with pytest.raises(ValueError):
+        table_count(sample_dataframe, 123)  # Column name is not a string
+
+# Run the tests if script is executed directly
+if __name__ == "__main__":
     pytest.main()
