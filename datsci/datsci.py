@@ -72,7 +72,7 @@ def format_db(df, **kwargs):
         df = df.drop_duplicates(subset=[dupl_subs])
     
     if blnk:
-        df = df.dropna()
+        df = df.dropna(how='all')
 
     if type:
         df = df.convert_dtypes()
