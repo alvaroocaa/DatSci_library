@@ -54,7 +54,7 @@ def read_txt(directory, **kwargs):
 
     rows = kwargs.get('rows', 0)
 
-    df = pd.read_csv(rf'{cleaned_file_path}', skip_rows = rows, encoding ='latin', sep = '\t')
+    df = pd.read_csv(rf'{cleaned_file_path}', skiprows = rows, encoding ='latin', sep = '\t')
     return df
 
 
@@ -72,7 +72,7 @@ def format_db(df, **kwargs):
         df = df.drop_duplicates(subset=[dupl_subs])
     
     if blnk:
-        df = df.dropna()
+        df = df.dropna(how='all')
 
     if type:
         df = df.convert_dtypes()
@@ -81,8 +81,6 @@ def format_db(df, **kwargs):
     
 
 def table_count(df, column):
-    
-    categories = pd.unique(df[column])
 
     # Check if df is a pandas DataFrame
     if not isinstance(df, pd.DataFrame):
@@ -95,6 +93,8 @@ def table_count(df, column):
     # Check if the specified column exists in the dataframe
     if column not in df.columns:
         raise ValueError(f"The specified column '{column}' does not exist in the dataframe.")
+    
+    categories = pd.unique(df[column])
 
     # Check if categories is empty
     if len(categories.tolist()) == 0:

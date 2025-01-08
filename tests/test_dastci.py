@@ -7,7 +7,7 @@ import numpy as np # type: ignore
 import os
 from io import StringIO
 from unittest.mock import patch
-from datsci.datsci import extract_df, format_db, table_count
+from datsci.datsci import extract_df, format_db, table_count, read_txt
 import tempfile
 
 @pytest.fixture
