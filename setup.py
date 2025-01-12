@@ -10,7 +10,8 @@ setup(
     packages=find_packages(),  
     install_requires=[
         'numpy',
-        'pandas'
+        'pandas',
+        'openpyxl'
     ],
     classifiers=[
         'Programming Language :: Python :: 3',

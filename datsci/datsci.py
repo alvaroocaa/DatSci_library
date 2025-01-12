@@ -1,6 +1,7 @@
 import os
 import pandas as pd # type: ignore
 import numpy as np # type: ignore
+import openpyxl
 
 def extract_df(file, directory, filename, ext):
     try:
