@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='datsci',
-    version='0.1.1',
+    version='1.0',
     description="A set of functions to help me on rutinary work tasks as data specialist, this is a beta phase as it is my first ever creation of a python library. Please don't judge :)",
     long_description=open('README.md').read(),
     author='Alvaro Castillejo',

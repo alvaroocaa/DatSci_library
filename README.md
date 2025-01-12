@@ -10,9 +10,6 @@ It has been though as a library that will execute functions from different data 
 
 If anyone wants to give it a try feel free, it is an open-source project and contact me any time or create a push-request if you would like to contribute.
 
-As of day 11/12/2024 official release of version 0.1. Stable version but will be worked and updated very soon as this is just a test that the project is working but give it a few months until it really becomes useful.
-
-
 **Functions:**
 
 1. **extract_df(file, directory, filename, ext):**
