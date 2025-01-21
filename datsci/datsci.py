@@ -50,7 +50,7 @@ def read_txt(directory, **kwargs):
     file_name, file_ext = os.path.splitext(base_name)
     cleaned_file_path = os.path.join(dir_name, f"{file_name}_cleaned{file_ext}")
 
-    with open(cleaned_file_path, 'w', encoding='utf-8') as file:
+    with open(cleaned_file_path, 'w') as file:
         file.write(cleaned_text)
 
     rows = kwargs.get('rows', 0)
