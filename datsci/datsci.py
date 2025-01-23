@@ -42,7 +42,7 @@ def extract_df(file, directory, filename, ext):
 
 def read_txt(directory, **kwargs):
 
-    with open(directory, 'r', encoding='utf-8') as file:
+    with open(directory, 'r') as file:
         text = file.read()
 
     cleaned_text = text.replace('"', '').replace("'", '')
