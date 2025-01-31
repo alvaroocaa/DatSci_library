@@ -7,6 +7,7 @@ It has been though as a library that will execute functions from different data 
 * Processing it
 * Analyzing
 * Cleansing
+* Exporting data
 
 If anyone wants to give it a try feel free, it is an open-source project and contact me any time or create a push-request if you would like to contribute.
 
@@ -48,3 +49,12 @@ Function to create a table summarizing the data in a dataframe. The parameters t
 
 * **df:** dataframe to summarize the data
 * **column:** the column that should be taken as the backbone to summarize the data
+
+5. **sh_excel(dfs, sheet_names, file_name, directory=):**
+
+Function to export an Excel file with different dataframes saved into different sheets of the same dataframe:
+
+* **dfs:** list or tuple containing the different dataframes to be saved
+* **sheet_names:** a list of strings containing the names of the different sheets that are going to be created
+* **file_name:** the name of the output Excel file, can be either indicated with estension .xlsx or without
+* **directory=:** if the file needs to be saved in a different directory it must be indicated ='c/..../', default is =False

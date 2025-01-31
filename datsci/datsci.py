@@ -3,6 +3,7 @@ import pandas as pd # type: ignore
 import numpy as np # type: ignore
 import openpyxl # type: ignore
 import tempfile
+import xlsxwriter # type: ignore
 
 def extract_df(file, directory, filename, ext):
     try:
@@ -138,4 +139,36 @@ def table_count(df, column):
 
     return return_df
 
+def sh_excel(dfs, sheet_names, file_name, **kwargs):
 
+    directory = kwargs.get('directory', False)
+
+    if not all(isinstance(arg, (tuple, list)) for arg in (dfs, sheet_names)):
+        raise ValueError("'dfs' and 'sheet_names' input parameters must be of type tuple or list")
+        
+    if not all(isinstance(df, pd.DataFrame) for df in dfs):
+        raise ValueError("Each element in 'dfs' must be a pandas DataFrame.")
+
+    if len(dfs) != len(sheet_names):
+        raise ValueError("'dfs' and 'sheet_names' must have the same length")
+
+    if not all(isinstance(name, str) for name in sheet_names):
+        raise ValueError("Each element in 'sheet_names' must be a string.")
+    
+    if not file_name.lower().endswith(".xlsx"):
+        file_name += ".xlsx"
+
+    if directory and isinstance(directory, str):
+        file_name = os.path.join(directory, file_name)
+
+    with pd.ExcelWriter(file_name, engine='xlsxwriter') as writer:
+        for df, sheet_name in zip(dfs, sheet_names):
+            if not isinstance(df, pd.DataFrame):
+                raise ValueError("Each element in 'dfs' must be a pandas DataFrame")
+            writer.book.use_zip64()  
+            df.to_excel(writer, sheet_name=sheet_name, index=False)
+
+    print(f"Excel file '{file_name}' saved successfully!")
+    
+
+    
