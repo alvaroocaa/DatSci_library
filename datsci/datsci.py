@@ -2,6 +2,7 @@ import os
 import pandas as pd # type: ignore
 import numpy as np # type: ignore
 import openpyxl
+import tempfile
 
 def extract_df(file, directory, filename, ext):
     try:
@@ -45,17 +46,23 @@ def read_txt(directory, **kwargs):
     with open(directory, 'r') as file:
         text = file.read()
 
+    # Clean the text by removing unwanted characters
     cleaned_text = text.replace('"', '').replace("'", '')
-    dir_name, base_name = os.path.split(directory)
-    file_name, file_ext = os.path.splitext(base_name)
-    cleaned_file_path = os.path.join(dir_name, f"{file_name}_cleaned{file_ext}")
 
-    with open(cleaned_file_path, 'w', encoding='utf-8') as file:
-        file.write(cleaned_text)
+    # Create a temporary file and write the cleaned text to it
+    with tempfile.NamedTemporaryFile(delete=False, mode='w', encoding='utf-8', newline='') as tmp_file:
+        tmp_file.write(cleaned_text)
+        tmp_file_path = tmp_file.name  # Get the path to the temporary file
 
+    # Retrieve the number of rows to skip from kwargs (default is 0)
     rows = kwargs.get('rows', 0)
 
-    df = pd.read_csv(rf'{cleaned_file_path}', skiprows = rows, encoding ='latin', sep = '\t')
+    # Read the cleaned text from the temporary file into a DataFrame
+    df = pd.read_csv(tmp_file_path, skiprows=rows, encoding='latin', sep='\t')
+
+    # Optionally, remove the temporary file after reading (if you don't need it anymore)
+    os.remove(tmp_file_path)
+
     return df
 
 
