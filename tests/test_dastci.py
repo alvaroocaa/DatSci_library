@@ -95,6 +95,40 @@ def test_read_txt_non_utf8(temp_directory):
     assert list(df.columns) == ["Col1", "Col2"]
     assert "foo" in df["Col1"].values
 
+def test_read_txt_complex_unnamed_and_empty_columns(temp_directory):
+    """
+    Test that:
+    - Empty 'Unnamed:' columns are dropped,
+    - Non-empty 'Unnamed:' columns are renamed to the previous column,
+    - Only the correct columns and values remain.
+    """
+    text_file_path = os.path.join(temp_directory, "complex_unnamed.txt")
+    # Create a file with:
+    # - 'Unnamed: 1' (empty, should be dropped)
+    # - 'Test 1' (with values)
+    # - 'Unnamed: 2' (with values, should be renamed to 'Test 1')
+    # - 'Test 2' (empty, should be kept as column but empty)
+    content = (
+        "Test 1\tUnnamed: 1\tUnnamed: 2\tTest 2\n"
+        "a1\t\tb1\t\n"
+        "a2\t\tb2\t\n"
+    )
+    with open(text_file_path, "w", encoding="utf-8") as f:
+        f.write(content)
+
+    df = read_txt(text_file_path)
+    # After processing:
+    # Columns should be ['Test 1', 'Test 1', 'Test 2']
+    # First 'Test 1' column: ['a1', 'a2']
+    # Second 'Test 1' column (was 'Unnamed: 2'): ['b1', 'b2']
+    # 'Test 2' column: [nan, nan] (empty)
+    assert list(df.columns) == ["Test 1", "Test 2"]
+    assert df["Test 1"].iloc[0] == "a1"
+    assert df["Test 1"].iloc[1] == "a2"
+    # The second 'Test 1' column (was 'Unnamed: 2')
+    assert df["Test 2"].iloc[0] == "b1"
+    assert df["Test 2"].iloc[1] == "b2"
+
 # ===========================
 # TESTS FOR format_db
 # ===========================

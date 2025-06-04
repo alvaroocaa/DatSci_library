@@ -54,6 +54,7 @@ def read_txt(directory, **kwargs):
         detector.close()
     encode =  detector.result['encoding'] # Return file's encoding
 
+    # Read file with the correct encoding detected as before
     with open(directory, 'r', encoding=encode) as file:
         text = file.read()
 
@@ -65,14 +66,33 @@ def read_txt(directory, **kwargs):
         tmp_file.write(cleaned_text)
         tmp_file_path = tmp_file.name  # Get the path to the temporary file
 
-    # Retrieve the number of rows to skip from kwargs (default is 0)
+    # Read Dataframe from cleaned file
     rows = kwargs.get('rows', 0)
+    df = pd.read_csv(tmp_file_path, skiprows=rows, encoding='latin', sep='\t') # Read the cleaned text
+    os.remove(tmp_file_path) # Remove temporary file
 
-    # Read the cleaned text from the temporary file into a DataFrame
-    df = pd.read_csv(tmp_file_path, skiprows=rows, encoding='latin', sep='\t')
-
-    # Remove the temporary file after reading (don't need it anymore)
-    os.remove(tmp_file_path)
+    # Cleanse dataframe of unwanted empty columns created (Unnamed: x)
+    cols = list(df.columns)
+    to_rename = {}
+    to_drop = []
+    i = 0
+    while i < len(cols):
+        col = cols[i]
+        # If column has 'Unname' in its name
+        if "Unname" in col:
+            if df[col].isnull().all():
+                to_drop.append(col)
+            elif i < len(cols) - 1:
+                # Rename this column to the name of the column on the right
+                right_col = cols[i + 1]
+                to_rename[col] = right_col
+                to_drop.append(right_col)
+                i += 1  # Skip the right column since it will be dropped
+        i += 1
+    if to_drop:
+        df = df.drop(columns=to_drop)
+    if to_rename:
+        df = df.rename(columns=to_rename)
 
     return df
 
