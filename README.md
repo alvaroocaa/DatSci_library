@@ -11,6 +11,8 @@ It has been though as a library that will execute functions from different data 
 
 If anyone wants to give it a try feel free, it is an open-source project and contact me any time or create a push-request if you would like to contribute.
 
+This README file with documentation of all functions by running function **read_me()**
+
 **Functions:**
 
 1. **extract_df(file, directory, filename, ext):**

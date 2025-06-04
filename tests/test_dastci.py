@@ -10,7 +10,7 @@ from unittest.mock import patch
 import tempfile
 
 # Importing functions to test
-from datsci.datsci import extract_df, format_db, table_count, read_txt, sh_excel
+from datsci.datsci import extract_df, format_db, table_count, read_txt, sh_excel, read_me
 
 # ===========================
 # FIXTURES
@@ -77,6 +77,23 @@ def test_read_txt(temp_directory):
     df = read_txt(text_file_path)
     assert not df.empty
     assert list(df.columns) == ["Column1", "Column2"]
+
+def test_read_txt_non_utf8(temp_directory):
+    """Test reading a non-utf-8 (latin-1) encoded text file with several lines."""
+    text_file_path = os.path.join(temp_directory, "latin1_file.txt")
+    # Write a latin-1 encoded file with multiple lines
+    lines = [
+        "Col1\tCol2\n",
+        "áéíóú\tñÑ\n",
+        "foo\tbar\n"
+    ]
+    with open(text_file_path, "w", encoding="latin-1") as f:
+        f.writelines(lines)
+
+    df = read_txt(text_file_path)
+    assert not df.empty
+    assert list(df.columns) == ["Col1", "Col2"]
+    assert "foo" in df["Col1"].values
 
 # ===========================
 # TESTS FOR format_db
@@ -164,6 +181,10 @@ def test_sh_excel_invalid_inputs(sample_dataframes, temp_excel_file):
     # Non-DataFrame elements in dfs
     with pytest.raises(ValueError, match="Each element in 'dfs' must be a pandas DataFrame"):
         sh_excel([1, 2, 3], sheet_names, temp_excel_file)
+
+def test_print_readme():
+
+    read_me()
 
 # ===========================
 # RUN TESTS

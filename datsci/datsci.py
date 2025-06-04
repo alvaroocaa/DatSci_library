@@ -4,6 +4,7 @@ import numpy as np # type: ignore
 import openpyxl # type: ignore
 import tempfile
 import xlsxwriter # type: ignore
+import chardet # type:ignore
 
 def extract_df(file, directory, filename, ext):
     try:
@@ -41,13 +42,22 @@ def extract_df(file, directory, filename, ext):
         print(f"Couldn't save successfully! Error: {e}")
         raise  # Re-raise the exception to ensure it's handled properly
 
-
 def read_txt(directory, **kwargs):
 
-    with open(directory, 'r') as file:
+    # Open the file in binary as reading mode to detect the file's encoding using chardet library
+    with open(directory, 'rb') as file:
+        detector = chardet.universaldetector.UniversalDetector()
+        for line in file:
+            detector.feed(line)
+            if detector.done:
+                break
+        detector.close()
+    encode =  detector.result['encoding'] # Return file's encoding
+
+    with open(directory, 'r', encoding=encode) as file:
         text = file.read()
 
-    # Clean the text by removing unwanted characters
+    # Clean the text by removing unwanted characters (" and ')
     cleaned_text = text.replace('"', '').replace("'", '')
 
     # Create a temporary file and write the cleaned text to it
@@ -61,11 +71,10 @@ def read_txt(directory, **kwargs):
     # Read the cleaned text from the temporary file into a DataFrame
     df = pd.read_csv(tmp_file_path, skiprows=rows, encoding='latin', sep='\t')
 
-    # Optionally, remove the temporary file after reading (if you don't need it anymore)
+    # Remove the temporary file after reading (don't need it anymore)
     os.remove(tmp_file_path)
 
     return df
-
 
 def format_db(df, **kwargs):
 
@@ -88,7 +97,6 @@ def format_db(df, **kwargs):
 
     return df
     
-
 def table_count(df, column):
 
     # Check if df is a pandas DataFrame
@@ -170,5 +178,14 @@ def sh_excel(dfs, sheet_names, file_name, **kwargs):
 
     print(f"Excel file '{file_name}' saved successfully!")
     
+def read_me():
+    try:
+        with open("README.md", "r", encoding="utf-8") as file:
+            content = file.read()
+        fixed_content = content.replace('\u00A0', ' ').replace('*','')
+        print(fixed_content)
+    except FileNotFoundError:
+        print("README.md file not found.")
+    except Exception as e:
+        print(f"Error reading README.md: {e}")
 
-    
