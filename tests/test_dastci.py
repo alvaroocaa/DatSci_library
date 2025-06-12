@@ -10,7 +10,7 @@ from unittest.mock import patch
 import tempfile
 
 # Importing functions to test
-from datsci.datsci import extract_df, format_db, table_count, read_txt, sh_excel, read_me
+from datsci.datsci import extract_df, format_db, table_count, read_txt, sh_excel, read_me, similarity
 
 # ===========================
 # FIXTURES
@@ -219,6 +219,31 @@ def test_sh_excel_invalid_inputs(sample_dataframes, temp_excel_file):
 def test_print_readme():
 
     read_me()
+
+# ===========================
+# TESTS FOR similarity
+# ===========================
+
+def test_similarity_basic():
+    a = ["hello world", "foo bar"]
+    b = ["hello world", "bar foo"]
+    result = similarity(a, b)
+    assert len(result) == 2
+    assert result[0] == 100  # Exact match
+    assert result[1] > 80     # Partial and token ratios should yield high similarity
+
+def test_similarity_empty_lists():
+    assert similarity([], []) == []
+
+def test_similarity_mismatched_lengths():
+    with pytest.raises(ValueError, match="Length of both lists are not the same"):
+        similarity(["a"], ["a", "b"])
+
+def test_similarity_typo():
+    a = ["hello world"]
+    b = ["helloo world"]
+    result = similarity(a, b)
+    assert 85 <= result[0] < 100  # Close match, not perfect
 
 # ===========================
 # RUN TESTS

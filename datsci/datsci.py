@@ -5,6 +5,7 @@ import openpyxl # type: ignore
 import tempfile
 import xlsxwriter # type: ignore
 import chardet # type:ignore
+from rapidfuzz import fuzz #type: ignore
 
 def extract_df(file, directory, filename, ext):
     try:
@@ -12,8 +13,7 @@ def extract_df(file, directory, filename, ext):
         os.makedirs(directory, exist_ok=True)
 
     except Exception as e:
-        print(f'Directory creation failed: {e}')
-        return
+        raise ValueError(f"Directory creation failed: {ext}")
 
     try:
         # Check for supported file extensions
@@ -70,7 +70,7 @@ def read_txt(directory, **kwargs):
     rows = kwargs.get('rows', 0)
     df = pd.read_csv(tmp_file_path, skiprows=rows, encoding='latin', sep='\t') # Read the cleaned text
     os.remove(tmp_file_path) # Remove temporary file
-
+    '''
     # Cleanse dataframe of unwanted empty columns created (Unnamed: x)
     cols = list(df.columns)
     to_rename = {}
@@ -93,6 +93,9 @@ def read_txt(directory, **kwargs):
         df = df.drop(columns=to_drop)
     if to_rename:
         df = df.rename(columns=to_rename)
+
+    names = list(df.columns).strip()
+    '''
 
     return df
 
@@ -208,4 +211,25 @@ def read_me():
         print("README.md file not found.")
     except Exception as e:
         print(f"Error reading README.md: {e}")
+
+
+def similarity(a, b):
+
+    if len(a) != len(b):
+        raise ValueError(f"Length of both lists are not the same: {len(a)} != {len(b)}")
+    
+    else:
+        return_list = []
+
+        for x, y in zip(a,b):
+
+            ratio = fuzz.ratio(x, y)
+            partial_ratio = fuzz.partial_ratio(x, y)
+            sort_ratio = fuzz.token_sort_ratio(x, y)
+            set_ratio = fuzz.token_set_ratio(x, y)
+
+            return_list.append((ratio + partial_ratio + sort_ratio + set_ratio) / 4)
+
+    return return_list
+
 
