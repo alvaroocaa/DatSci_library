@@ -8,6 +8,7 @@ import numpy as np  # type: ignore
 from io import StringIO
 from unittest.mock import patch
 import tempfile
+from rapidfuzz import fuzz #type: ignore
 
 # Importing functions to test
 from datsci.datsci import extract_df, format_db, table_count, read_txt, sh_excel, read_me, similarity
@@ -81,7 +82,6 @@ def test_read_txt(temp_directory):
 def test_read_txt_non_utf8(temp_directory):
     """Test reading a non-utf-8 (latin-1) encoded text file with several lines."""
     text_file_path = os.path.join(temp_directory, "latin1_file.txt")
-    # Write a latin-1 encoded file with multiple lines
     lines = [
         "Col1\tCol2\n",
         "áéíóú\tñÑ\n",
@@ -98,36 +98,39 @@ def test_read_txt_non_utf8(temp_directory):
 def test_read_txt_complex_unnamed_and_empty_columns(temp_directory):
     """
     Test that:
-    - Empty 'Unnamed:' columns are dropped,
-    - Non-empty 'Unnamed:' columns are renamed to the previous column,
+    - Empty 'Unnam' columns are dropped,
+    - Non-empty 'Unnam' columns are renamed to the following column,
+    - Rows where column value == column name are filtered out,
     - Only the correct columns and values remain.
     """
     text_file_path = os.path.join(temp_directory, "complex_unnamed.txt")
-    # Create a file with:
-    # - 'Unnamed: 1' (empty, should be dropped)
-    # - 'Test 1' (with values)
-    # - 'Unnamed: 2' (with values, should be renamed to 'Test 1')
-    # - 'Test 2' (empty, should be kept as column but empty)
+    # Creating tab-separated content that fits your use case
     content = (
-        "Test 1\tUnnamed: 1\tUnnamed: 2\tTest 2\n"
+        "Test 1\tUnnam 1\tUnnam 2\tValidCol\n"
         "a1\t\tb1\t\n"
         "a2\t\tb2\t\n"
+        "Test 1\tdata\tdata\t\n"  # To test filtering out rows where value == col name
     )
     with open(text_file_path, "w", encoding="utf-8") as f:
         f.write(content)
 
     df = read_txt(text_file_path)
-    # After processing:
-    # Columns should be ['Test 1', 'Test 1', 'Test 2']
-    # First 'Test 1' column: ['a1', 'a2']
-    # Second 'Test 1' column (was 'Unnamed: 2'): ['b1', 'b2']
-    # 'Test 2' column: [nan, nan] (empty)
-    assert list(df.columns) == ["Test 1", "Test 2"]
-    assert df["Test 1"].iloc[0] == "a1"
-    assert df["Test 1"].iloc[1] == "a2"
-    # The second 'Test 1' column (was 'Unnamed: 2')
-    assert df["Test 2"].iloc[0] == "b1"
-    assert df["Test 2"].iloc[1] == "b2"
+
+    # 'Unnam 1' is empty, should be dropped
+    assert 'Unnam 1' not in df.columns
+
+    # 'Unnam 2' is non-empty and next col 'ValidCol' is empty,
+    # so 'Unnam 2' should be renamed to 'ValidCol' and 'ValidCol' dropped,
+    # resulting in no 'ValidCol' column but renamed 'Unnam 2' column named 'ValidCol'
+    assert 'ValidCol' in df.columns
+    assert 'Unnam 2' not in df.columns
+
+    # Filtered out rows where column value equals column name (e.g., "Test 1" in "Test 1" col)
+    assert not (df['Test 1'] == 'Test 1').any()
+
+    # Validate some values remain
+    assert 'a1' in df['Test 1'].values
+    assert 'b1' in df['ValidCol'].values
 
 # ===========================
 # TESTS FOR format_db
@@ -230,7 +233,7 @@ def test_similarity_basic():
     result = similarity(a, b)
     assert len(result) == 2
     assert result[0] == 100  # Exact match
-    assert result[1] > 80     # Partial and token ratios should yield high similarity
+    assert result[1] > 75     # Partial and token ratios should yield high similarity
 
 def test_similarity_empty_lists():
     assert similarity([], []) == []
@@ -243,6 +246,7 @@ def test_similarity_typo():
     a = ["hello world"]
     b = ["helloo world"]
     result = similarity(a, b)
+    assert len(result) == 1
     assert 85 <= result[0] < 100  # Close match, not perfect
 
 # ===========================

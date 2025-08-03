@@ -68,34 +68,50 @@ def read_txt(directory, **kwargs):
 
     # Read Dataframe from cleaned file
     rows = kwargs.get('rows', 0)
-    df = pd.read_csv(tmp_file_path, skiprows=rows, encoding='latin', sep='\t') # Read the cleaned text
+    df = pd.read_csv(tmp_file_path, skiprows=rows, encoding='utf-8', sep='\t') # Read the cleaned text with UTF-8 encoding (as rewritten above)
     os.remove(tmp_file_path) # Remove temporary file
-    '''
-    # Cleanse dataframe of unwanted empty columns created (Unnamed: x)
-    cols = list(df.columns)
-    to_rename = {}
-    to_drop = []
-    i = 0
-    while i < len(cols):
-        col = cols[i]
-        # If column has 'Unname' in its name
-        if "Unname" in col:
-            if df[col].isnull().all():
-                to_drop.append(col)
-            elif i < len(cols) - 1:
-                # Rename this column to the name of the column on the right
-                right_col = cols[i + 1]
-                to_rename[col] = right_col
-                to_drop.append(right_col)
-                i += 1  # Skip the right column since it will be dropped
-        i += 1
-    if to_drop:
-        df = df.drop(columns=to_drop)
-    if to_rename:
-        df = df.rename(columns=to_rename)
 
-    names = list(df.columns).strip()
-    '''
+    for col in df.columns:
+        if 'Unna' not in col and not df[col].isna().all():
+            df = df[df[col] != col]
+            print(f"Filtered using column: {col}")
+            break
+    else:
+        print("No valid column found.")
+
+    i = 0
+    while i < len(df.columns):
+        col = df.columns[i]
+
+        # Case 1: Column contains 'Unna' and is completely empty — drop it
+        if 'Unna' in col and df[col].isna().all():
+            df = df.drop(columns=[col])
+            # Don't increment i because columns shifted left
+            continue
+
+        # Case 2: Column contains 'Unna' and is NOT empty
+        if 'Unna' in col and not df[col].isna().all():
+            if i + 1 < len(df.columns):
+                next_col = df.columns[i + 1]
+
+                # Next column does NOT contain 'Unna' and IS empty
+                if 'Unna' not in next_col and df[next_col].isna().all():
+                    # Rename current col to a temp unique name
+                    temp_name = col + "_temp_rename"
+
+                    df = df.rename(columns={col: temp_name})
+
+                    # Drop the next (empty) column
+                    df = df.drop(columns=[next_col])
+
+                    # Rename temp column to the next_col's original name
+                    df = df.rename(columns={temp_name: next_col})
+
+                    # Don't increment i because columns shifted
+                    continue
+
+        i += 1
+
 
     return df
 
@@ -212,7 +228,6 @@ def read_me():
     except Exception as e:
         print(f"Error reading README.md: {e}")
 
-
 def similarity(a, b):
 
     if len(a) != len(b):
@@ -231,5 +246,3 @@ def similarity(a, b):
             return_list.append((ratio + partial_ratio + sort_ratio + set_ratio) / 4)
 
     return return_list
-
-
