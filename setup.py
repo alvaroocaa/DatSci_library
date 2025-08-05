@@ -8,7 +8,7 @@ with open(os.path.join(this_dir, "README.md"), encoding="utf-8") as f:
 
 setup(
     name='datsci',
-    version='2.7',
+    version='2.7.1',
     description="A set of functions to help me on rutinary work tasks as data specialist, this is a beta phase as it is my first ever creation of a python library. Please don't judge :)",
     long_description=long_description,
     long_description_content_type="text/markdown",
