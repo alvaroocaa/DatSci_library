@@ -43,8 +43,9 @@ def extract_df(file, directory, filename, ext):
         raise  # Re-raise the exception to ensure it's handled properly
 
 def read_txt(directory, **kwargs):
+    print(f"[DEBUG] Starting read_txt with file: {directory}")
 
-    # Open the file in binary as reading mode to detect the file's encoding using chardet library
+    # Detect file encoding
     with open(directory, 'rb') as file:
         detector = chardet.universaldetector.UniversalDetector()
         for line in file:
@@ -52,69 +53,69 @@ def read_txt(directory, **kwargs):
             if detector.done:
                 break
         detector.close()
-    encode =  detector.result['encoding'] # Return file's encoding
+    encode = detector.result['encoding']
+    print(f"[DEBUG] Detected encoding: {encode}")
 
-    # Read file with the correct encoding detected as before
+    # Read the file with detected encoding
     with open(directory, 'r', encoding=encode) as file:
         text = file.read()
+    print(f"[DEBUG] Read {len(text)} characters from file")
 
-    # Clean the text by removing unwanted characters (" and ')
+    # Clean the text
     cleaned_text = text.replace('"', '').replace("'", '')
+    print(f"[DEBUG] Cleaned text length: {len(cleaned_text)}")
 
-    # Create a temporary file and write the cleaned text to it
+    # Write cleaned text to temporary file
     with tempfile.NamedTemporaryFile(delete=False, mode='w', encoding='utf-8', newline='') as tmp_file:
         tmp_file.write(cleaned_text)
-        tmp_file_path = tmp_file.name  # Get the path to the temporary file
+        tmp_file_path = tmp_file.name
+    print(f"[DEBUG] Temporary file created at: {tmp_file_path}")
 
-    # Read Dataframe from cleaned file
+    # Read DataFrame from temp file
     rows = kwargs.get('rows', 0)
-    df = pd.read_csv(tmp_file_path, skiprows=rows, encoding='utf-8', sep='\t') # Read the cleaned text with UTF-8 encoding (as rewritten above)
-    os.remove(tmp_file_path) # Remove temporary file
+    df = pd.read_csv(tmp_file_path, skiprows=rows, encoding='utf-8', sep='\t')
+    print(f"[DEBUG] DataFrame loaded with shape: {df.shape}")
 
+    # Remove temporary file
+    os.remove(tmp_file_path)
+    print(f"[DEBUG] Temporary file removed")
+
+    # Filtering based on columns
     for col in df.columns:
         if 'Unna' not in col and not df[col].isna().all():
             df = df[df[col] != col]
-            print(f"Filtered using column: {col}")
+            print(f"[DEBUG] Filtered DataFrame using column: {col}")
             break
     else:
-        print("No valid column found.")
+        print("[DEBUG] No valid column found for filtering")
 
     i = 0
     while i < len(df.columns):
         col = df.columns[i]
 
-        # Case 1: Column contains 'Unna' and is completely empty — drop it
+        # Case 1: Drop empty 'Unna' columns
         if 'Unna' in col and df[col].isna().all():
             df = df.drop(columns=[col])
-            # Don't increment i because columns shifted left
+            print(f"[DEBUG] Dropped empty 'Unna' column: {col}")
             continue
 
-        # Case 2: Column contains 'Unna' and is NOT empty
+        # Case 2: Rename and drop columns according to logic
         if 'Unna' in col and not df[col].isna().all():
             if i + 1 < len(df.columns):
                 next_col = df.columns[i + 1]
-
-                # Next column does NOT contain 'Unna' and IS empty
                 if 'Unna' not in next_col and df[next_col].isna().all():
-                    # Rename current col to a temp unique name
                     temp_name = col + "_temp_rename"
-
                     df = df.rename(columns={col: temp_name})
-
-                    # Drop the next (empty) column
                     df = df.drop(columns=[next_col])
-
-                    # Rename temp column to the next_col's original name
                     df = df.rename(columns={temp_name: next_col})
-
-                    # Don't increment i because columns shifted
+                    print(f"[DEBUG] Renamed column '{col}' to '{temp_name}' and dropped next empty column '{next_col}'")
                     continue
 
         i += 1
 
-
+    print(f"[DEBUG] Final DataFrame shape: {df.shape}")
     return df
-
+    
 def format_db(df, **kwargs):
 
     dupl = kwargs.get('dupl', False)
