@@ -6,7 +6,6 @@ import tempfile
 import xlsxwriter # type: ignore
 import chardet # type:ignore
 from rapidfuzz import fuzz #type: ignore
-import sys
 
 def extract_df(file, directory, filename, ext):
     try:
@@ -45,7 +44,6 @@ def extract_df(file, directory, filename, ext):
 
 def read_txt(directory, **kwargs):
     print('START')
-    sys.stdout.flush()
     print(f"[DEBUG] Starting read_txt with file: {directory}")
     sys.stdout.flush()
     # Detect file encoding
