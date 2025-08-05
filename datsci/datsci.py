@@ -44,7 +44,10 @@ def extract_df(file, directory, filename, ext):
 
 def read_txt(directory, **kwargs):
     print(f"[DEBUG] Starting read_txt with file: {directory}")
+    import sys
 
+    print("[DEBUG] message")
+    sys.stdout.flush()
     # Detect file encoding
     with open(directory, 'rb') as file:
         detector = chardet.universaldetector.UniversalDetector()
