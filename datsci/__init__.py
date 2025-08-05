@@ -1,7 +1,7 @@
 # my_library/__init__.py
 
 # Define the version of the package
-__version__ = "0.1.1"
+__version__ = "1.0"
 
 # Import key components of your library to make them easily accessible
 from .datsci import *
