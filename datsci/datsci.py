@@ -43,8 +43,6 @@ def extract_df(file, directory, filename, ext):
         raise  # Re-raise the exception to ensure it's handled properly
 
 def read_txt(directory, **kwargs):
-    print('START')
-    print(f"[DEBUG] Starting read_txt with file: {directory}")
     # Detect file encoding
     with open(directory, 'rb') as file:
         detector = chardet.universaldetector.UniversalDetector()
@@ -54,41 +52,31 @@ def read_txt(directory, **kwargs):
                 break
         detector.close()
     encode = detector.result['encoding']
-    print(f"[DEBUG] Detected encoding: {encode}")
 
     # Read the file with detected encoding
     with open(directory, 'r', encoding=encode) as file:
         text = file.read()
-    print(f"[DEBUG] Read {len(text)} characters from file")
 
     # Clean the text
     cleaned_text = text.replace('"', '').replace("'", '')
-    print(f"[DEBUG] Cleaned text length: {len(cleaned_text)}")
 
     # Write cleaned text to temporary file
     with tempfile.NamedTemporaryFile(delete=False, mode='w', encoding='utf-8', newline='') as tmp_file:
         tmp_file.write(cleaned_text)
         tmp_file_path = tmp_file.name
-    print(f"[DEBUG] Temporary file created at: {tmp_file_path}")
-
+        
     # Read DataFrame from temp file
     rows = kwargs.get('rows', 0)
     df = pd.read_csv(tmp_file_path, skiprows=rows, encoding='utf-8', sep='\t')
-    print(f"[DEBUG] DataFrame loaded with shape: {df.shape}")
 
     # Remove temporary file
     os.remove(tmp_file_path)
-    print(f"[DEBUG] Temporary file removed")
 
     # Filtering based on columns
     for col in df.columns:
         if 'Unna' not in col and not df[col].isna().all():
             df = df[df[col] != col]
-            print(f"[DEBUG] Filtered DataFrame using column: {col}")
             break
-    else:
-        print("[DEBUG] No valid column found for filtering")
-
     i = 0
     while i < len(df.columns):
         col = df.columns[i]
@@ -96,7 +84,6 @@ def read_txt(directory, **kwargs):
         # Case 1: Drop empty 'Unna' columns
         if 'Unna' in col and df[col].isna().all():
             df = df.drop(columns=[col])
-            print(f"[DEBUG] Dropped empty 'Unna' column: {col}")
             continue
 
         # Case 2: Rename and drop columns according to logic
@@ -108,12 +95,10 @@ def read_txt(directory, **kwargs):
                     df = df.rename(columns={col: temp_name})
                     df = df.drop(columns=[next_col])
                     df = df.rename(columns={temp_name: next_col})
-                    print(f"[DEBUG] Renamed column '{col}' to '{temp_name}' and dropped next empty column '{next_col}'")
                     continue
 
         i += 1
 
-    print(f"[DEBUG] Final DataFrame shape: {df.shape}")
     return df
     
 def format_db(df, **kwargs):
