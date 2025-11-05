@@ -87,14 +87,14 @@ def read_txt(directory, **kwargs):
             continue
 
         # Case 2: Rename and drop columns according to logic
-        if 'Unna' in col and not df[col].isna().all():
+        if 'Unna' not in col and  df[col].isna().all():
             if i + 1 < len(df.columns):
                 next_col = df.columns[i + 1]
-                if 'Unna' not in next_col and df[next_col].isna().all():
+                if 'Unna' in next_col and not df[next_col].isna().all():
                     temp_name = col + "_temp_rename"
-                    df = df.rename(columns={col: temp_name})
-                    df = df.drop(columns=[next_col])
-                    df = df.rename(columns={temp_name: next_col})
+                    df = df.rename(columns={next_col: temp_name})
+                    df = df.drop(columns=[col])
+                    df = df.rename(columns={temp_name: col})
                     continue
 
         i += 1
