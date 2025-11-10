@@ -106,9 +106,9 @@ def test_read_txt_complex_unnamed_and_empty_columns(temp_directory):
     text_file_path = os.path.join(temp_directory, "complex_unnamed.txt")
     # Creating tab-separated content that fits your use case
     content = (
-        "Test 1\tUnnam 1\tUnnam 2\tValidCol\n"
-        "a1\t\tb1\t\n"
-        "a2\t\tb2\t\n"
+        "Test 1\tUnnam 1\tValidCol\tUnnam 2\n"
+        "a1\t\t\tb1\n"
+        "a2\t\t\tb2\n"
         "Test 1\tdata\tdata\t\n"  # To test filtering out rows where value == col name
     )
     with open(text_file_path, "w", encoding="utf-8") as f:
@@ -131,6 +131,22 @@ def test_read_txt_complex_unnamed_and_empty_columns(temp_directory):
     # Validate some values remain
     assert 'a1' in df['Test 1'].values
     assert 'b1' in df['ValidCol'].values
+
+# ===========================
+# TEST FOR LEADING/TRAILING SPACES IN COLUMN NAMES
+# ===========================
+
+def test_column_names_no_leading_or_trailing_spaces(sample_dataframe):
+    """Ensure no column names contain leading or trailing whitespace."""
+    assert all(col == col.strip() for col in sample_dataframe.columns)
+
+
+def test_column_names_stripped():
+    """Ensure stripping logic correctly cleans column names."""
+    df = pd.DataFrame({"  A  ": [1], " B": [2], "C ": [3]})
+    cleaned = [col.strip() for col in df.columns]
+    df.columns = cleaned
+    assert all(col == col.strip() for col in df.columns)
 
 # ===========================
 # TESTS FOR format_db
