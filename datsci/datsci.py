@@ -72,6 +72,10 @@ def read_txt(directory, **kwargs):
     # Remove temporary file
     os.remove(tmp_file_path)
 
+    # Change all column names to stripped (delete trailing or leading spaces)
+
+    df.columns = df.columns.str.strip()
+
     # Filtering based on columns
     for col in df.columns:
         if 'Unna' not in col and not df[col].isna().all():
