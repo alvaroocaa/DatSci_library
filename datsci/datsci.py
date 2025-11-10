@@ -3,7 +3,7 @@ import pandas as pd # type: ignore
 import numpy as np # type: ignore
 import openpyxl # type: ignore
 import tempfile
-import xlsxwriter # type: ignore
+import xlsxwriter # type: ignores
 import chardet # type:ignore
 from rapidfuzz import fuzz #type: ignore
 
