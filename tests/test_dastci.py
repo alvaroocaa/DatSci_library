@@ -5,10 +5,9 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 import pytest  # type: ignore
 import pandas as pd  # type: ignore
 import numpy as np  # type: ignore
-from io import StringIO
 from unittest.mock import patch
 import tempfile
-from rapidfuzz import fuzz #type: ignore
+pd.set_option('future.no_silent_downcasting', True)
 
 # Importing functions to test
 from datsci.datsci import extract_df, format_db, table_count, read_txt, sh_excel, read_me, similarity
@@ -64,6 +63,11 @@ def test_extract_df(sample_dataframe, temp_directory):
 
     with pytest.raises(ValueError):
         extract_df(sample_dataframe, temp_directory, "test_file.xyz", "xyz")
+        
+def test_extract_df_txt(sample_dataframe, temp_directory):
+    file_name = "test_file.txt"
+    extract_df(sample_dataframe, temp_directory, file_name, "txt")
+    assert os.path.exists(os.path.join(temp_directory, file_name))
 
 # ===========================
 # TESTS FOR read_txt
@@ -132,6 +136,85 @@ def test_read_txt_complex_unnamed_and_empty_columns(temp_directory):
     assert 'a1' in df['Test 1'].values
     assert 'b1' in df['ValidCol'].values
 
+def test_read_txt_drop_unnamed_columns_with_whitespace_only(temp_directory):
+    text_file_path = os.path.join(temp_directory, "whitespace_unnamed.txt")
+    content = (
+        "A\tUnnam 1\tB\n"
+        "x\t   \ty\n"
+        "z\t\tw\n"
+    )
+    with open(text_file_path, "w", encoding="utf-8") as f:
+        f.write(content)
+
+    df = read_txt(text_file_path)
+    assert "Unnam 1" not in df.columns
+    
+def test_read_txt_drop_multiple_empty_unnamed_columns(temp_directory):
+    text_file_path = os.path.join(temp_directory, "multi_unnamed.txt")
+    content = (
+        "A\tUnnam 1\tUnnam 2\tB\n"
+        "x\t\t\ty\n"
+        "z\t\t\tw\n"
+    )
+    with open(text_file_path, "w", encoding="utf-8") as f:
+        f.write(content)
+
+    df = read_txt(text_file_path)
+    assert "Unnam 1" not in df.columns
+    assert "Unnam 2" not in df.columns
+    assert list(df.columns) == ["A", "B"]
+    
+def test_read_txt_unnamed_column_mixed_blank_types(temp_directory):
+    text_file_path = os.path.join(temp_directory, "mixed_blank_unnamed.txt")
+    content = (
+        "A\tUnnam 1\tB\n"
+        "x\t \ty\n"
+        "z\t\tw\n"
+    )
+    with open(text_file_path, "w", encoding="utf-8") as f:
+        f.write(content)
+
+    df = read_txt(text_file_path)
+    assert "Unnam 1" not in df.columns
+    
+def test_read_txt_strips_header_spaces(temp_directory):
+    text_file_path = os.path.join(temp_directory, "header_spaces.txt")
+    content = (
+        "  Col1  \t Unnam 1 \t Col2 \n"
+        "a\t\tb\n"
+    )
+    with open(text_file_path, "w", encoding="utf-8") as f:
+        f.write(content)
+
+    df = read_txt(text_file_path)
+    assert "Col1" in df.columns
+    assert "Col2" in df.columns
+    
+def test_read_txt_promotes_next_unnamed_into_empty_named_column(temp_directory):
+    text_file_path = os.path.join(temp_directory, "promote_unnamed.txt")
+    content = (
+        "A\tValidCol\tUnnam 2\n"
+        "x\t\tb1\n"
+        "y\t\tb2\n"
+    )
+    with open(text_file_path, "w", encoding="utf-8") as f:
+        f.write(content)
+
+    df = read_txt(text_file_path)
+    assert "ValidCol" in df.columns
+    assert "Unnam 2" not in df.columns
+    assert "b1" in df["ValidCol"].values
+    assert "b2" in df["ValidCol"].values
+    assert len(df) == 2
+        
+def test_format_db_blnk_removes_all_nan_rows():
+    df = pd.DataFrame({
+        "A": [1, np.nan, 2],
+        "B": [3, np.nan, np.nan]
+    })
+    formatted = format_db(df, blnk=True)
+    assert len(formatted) == 2
+
 # ===========================
 # TEST FOR LEADING/TRAILING SPACES IN COLUMN NAMES
 # ===========================
@@ -157,9 +240,12 @@ def test_format_db(sample_dataframe):
     formatted_df = format_db(sample_dataframe, dupl=True)
     assert len(formatted_df) < len(sample_dataframe)  # Duplicates removed
 
-    formatted_df = format_db(sample_dataframe, blnk=True)
-    assert not formatted_df.isnull().any().any()  # No blanks should remain
-
+    formatted_df = format_db(sample_dataframe)
+    assert not formatted_df.isnull().any().any()
+    
+def test_format_db_removes_duplicates(sample_dataframe):
+    formatted_df = format_db(sample_dataframe, dupl=True)
+    assert len(formatted_df) < len(sample_dataframe)
 # ===========================
 # TESTS FOR table_count
 # ===========================
@@ -178,6 +264,13 @@ def test_table_count(sample_dataframe):
 
     with pytest.raises(ValueError):
         table_count(sample_dataframe, 123)  # Column name is not a string
+        
+def test_table_count_values(sample_dataframe):
+    count_df = table_count(sample_dataframe, "Category")
+    a_count = count_df.loc[count_df["Categories"] == "A", "Count"].iloc[0]
+    total_count = count_df.loc[count_df["Categories"] == "Total", "Count"].iloc[0]
+    assert a_count == 3
+    assert total_count == 6
 
 # ===========================
 # TESTS FOR sh_excel
@@ -235,9 +328,10 @@ def test_sh_excel_invalid_inputs(sample_dataframes, temp_excel_file):
     with pytest.raises(ValueError, match="Each element in 'dfs' must be a pandas DataFrame"):
         sh_excel([1, 2, 3], sheet_names, temp_excel_file)
 
-def test_print_readme():
-
-    read_me()
+def test_read_me_file_not_found():
+    with patch("builtins.print") as mock_print:
+        read_me()
+        assert mock_print.called
 
 # ===========================
 # TESTS FOR similarity
@@ -264,6 +358,11 @@ def test_similarity_typo():
     result = similarity(a, b)
     assert len(result) == 1
     assert 85 <= result[0] < 100  # Close match, not perfect
+    
+def test_similarity_case_difference():
+    result = similarity(["Hello"], ["hello"])
+    assert len(result) == 1
+    assert result[0] < 100
 
 # ===========================
 # RUN TESTS
