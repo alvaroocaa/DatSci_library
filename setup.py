@@ -24,7 +24,8 @@ setup(
         'pandas',
         'openpyxl',
         'xlsxwriter',
-        'chardet'
+        'chardet',
+        'rapidfuzz'
     ],
     classifiers=[
         'Programming Language :: Python :: 3',
