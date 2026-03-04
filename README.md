@@ -1,62 +1,128 @@
 # DatSci
 
-Personal project to create a Python library to automatize recurrent day-to-day tasks performed at work involving treatment of data. This library will be updated as new necessities are faced and recurrent tasks need to be performed. 
+**DatSci** is a personal Python project aimed at automating recurring day-to-day data tasks performed at work.
 
-It has been though as a library that will execute functions from different data streams:
-* Fetching data
-* Processing it
-* Analyzing
-* Cleansing
-* Exporting data
+The library is designed to support common data workflows, including:
 
-If anyone wants to give it a try feel free, it is an open-source project and contact me any time or create a push-request if you would like to contribute.
+- fetching data
+- processing data
+- analyzing data
+- cleansing data
+- exporting data
 
-This README file with documentation of all functions by running function **read_me()**
+This project will continue to evolve as new use cases appear and additional recurring tasks are identified.
 
-**Functions:**
+## Contributing
 
-1. **extract_df(file, directory, filename, ext):**
+Contributions are welcome.
 
-Function to export dataframes into different file formats. The parameters to be inputed are as follows:
+If you would like to contribute:
 
-* **file:** dataframe to be exported
-* **directory:** directory where the file will be exported, if not indicated it will be exported into the directory where the script is located
-* **filename:** the name that the exported file will gave
-* **ext:** the type of file to be created. Extensions supported are:
-    * **excel**
-    * **parquet**
-    * **csv**
-    * **txt**
+1. Create a new branch from `develop`
+2. Make your changes in your own branch
+3. Open a pull request into `develop`
 
-2. **read_txt(directory, rows=):**
+Please avoid pushing directly to `main`.
 
-Function created to read txt files specially imported from the SAP spool request options. The parameters to be inputed are as follows:
+Suggested branch naming:
 
-* **directory:** directory where the txt file to be read is located
-* **rows=:** rows to be skipped, **OPTIONAL** parameter, default is 0
+- `feature/issue-id-short-description`
+- `fix/issue-id-short-description`
+- `docs/issue-id-short-description`
 
-3. **format_db(df, dupl=, dupl_subs=, blnk=, type=):**
+Examples:
 
-Function to format/clean a dataframe. The parameters to be inputed are as follows:
+- `feature/42-add-read-txt-options`
+- `fix/15-handle-empty-files`
+- `docs/8-update-readme`
 
-* **df:** dataframe to format/clean
-* **dupl=:** if duplicate rows should be dropped =True, default is =False
-* **dupl_subs=:** if duplicate rows should be dropped by looking at one row specifically indicate ='name of row', default is =False
-* **blnk=:** if blank rows should be dropped =True, default is =False
-* **type=:** if rows data type should be detected automatically =True, default is =False
+## Branching Strategy
 
-4. **table_count(df, column):**
+This repository follows a simple branching model:
 
-Function to create a table summarizing the data in a dataframe. The parameters to be inputed are as follows:
+- `main` → stable, release-ready code
+- `develop` → active development branch
+- `feature/*` → short-lived branches for each feature, fix, or documentation update (created from `develop`)
 
-* **df:** dataframe to summarize the data
-* **column:** the column that should be taken as the backbone to summarize the data
+Recommended flow:
 
-5. **sh_excel(dfs, sheet_names, file_name, directory=):**
+1. Create a feature branch from `develop`
+2. Open a pull request into `develop`
+3. Merge into `develop` after review
+4. Merge `develop` into `main` once the code is stable
 
-Function to export an Excel file with different dataframes saved into different sheets of the same dataframe:
+## Documentation
 
-* **dfs:** list or tuple containing the different dataframes to be saved
-* **sheet_names:** a list of strings containing the names of the different sheets that are going to be created
-* **file_name:** the name of the output Excel file, can be either indicated with estension .xlsx or without
-* **directory=:** if the file needs to be saved in a different directory it must be indicated ='c/..../', default is =False
+Documentation for the available functions can also be displayed by running:
+
+**`read_me()`**
+
+## Functions
+
+### 1. `extract_df(file, directory, filename, ext)`
+
+Exports a DataFrame into different file formats.
+
+**Parameters:**
+
+- **`file`**: DataFrame to export
+- **`directory`**: destination directory. If not provided, the file is exported to the same directory where the script is located
+- **`filename`**: name of the exported file
+- **`ext`**: output file format. Supported values:
+  - `excel`
+  - `parquet`
+  - `csv`
+  - `txt`
+
+---
+
+### 2. `read_txt(directory, rows=0)`
+
+Reads `.txt` files, especially files imported from SAP spool request outputs.
+
+**Parameters:**
+
+- **`directory`**: path to the `.txt` file
+- **`rows`**: number of rows to skip. Optional. Default is `0`
+
+---
+
+### 3. `format_db(df, dupl=False, dupl_subs=False, blnk=False, type=False)`
+
+Formats and cleans a DataFrame.
+
+**Parameters:**
+
+- **`df`**: DataFrame to clean
+- **`dupl`**: remove duplicate rows if `True`. Default is `False`
+- **`dupl_subs`**: remove duplicates based on a specific column name. Default is `False`
+- **`blnk`**: remove blank rows if `True`. Default is `False`
+- **`type`**: automatically detect data types if `True`. Default is `False`
+
+---
+
+### 4. `table_count(df, column)`
+
+Creates a summary table based on a selected column in a DataFrame.
+
+**Parameters:**
+
+- **`df`**: DataFrame to summarize
+- **`column`**: column used as the basis for the summary
+
+---
+
+### 5. `sh_excel(dfs, sheet_names, file_name, directory=False)`
+
+Exports multiple DataFrames into a single Excel file, with each DataFrame stored in a different sheet.
+
+**Parameters:**
+
+- **`dfs`**: list or tuple of DataFrames to save
+- **`sheet_names`**: list of sheet names
+- **`file_name`**: name of the output Excel file, with or without the `.xlsx` extension
+- **`directory`**: optional destination directory. Default is `False`
+
+## Notes
+
+This is an open-source project. Feel free to try it, suggest improvements, or open a pull request.
