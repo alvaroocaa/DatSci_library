@@ -65,6 +65,10 @@ def read_txt(directory, **kwargs):
     # Read DataFrame from temp file
     rows = kwargs.get('rows', 0)
     df = pd.read_csv(tmp_file_path, skiprows=rows, encoding='utf-8', sep='\t')
+    
+    # normalize names and blank cells
+    df.columns = df.columns.str.strip()
+    df = df.replace(r'^\s*$', np.nan, regex=True)
 
     # Remove temporary file
     os.remove(tmp_file_path)
