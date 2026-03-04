@@ -6,7 +6,6 @@ import tempfile
 import xlsxwriter # type: ignores
 import chardet # type:ignore
 from rapidfuzz import fuzz #type: ignore
-from chardet.universaldetector import UniversalDetector
 
 def extract_df(file, directory, filename, ext):
     try:
@@ -45,14 +44,11 @@ def extract_df(file, directory, filename, ext):
 
 def read_txt(directory, **kwargs):
     # Detect file encoding
-    with open(directory, 'rb') as file:
-        detector = UniversalDetector()
-        for line in file:
-            detector.feed(line)
-            if detector.done:
-                break
-        detector.close()
-    encode = detector.result['encoding']
+    with open(directory, "rb") as file:
+        raw_data = file.read()
+
+    detected = chardet.detect(raw_data)
+    encode = detected.get("encoding") or "utf-8"
 
     # Read the file with detected encoding
     with open(directory, 'r', encoding=encode) as file:
