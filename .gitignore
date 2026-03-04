@@ -2,3 +2,6 @@
 .vscode/
 .pytest_cache/
 datsci/__pycache__/
+TEST_MANUAL.ipynb
+TEST.txt
+TEST.xlsx
